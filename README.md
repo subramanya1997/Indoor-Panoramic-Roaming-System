@@ -1,23 +1,21 @@
- # [texture-morpher] (index.html)
+ # [texture morpher using three.js](index.html)
 a tool to make morphable texture
 
 The dynamic texture is formed by triangulation, which makes the scene transition of the panoramic roaming system more natural.
 
-![] (doc/ triangles.png)
+![](doc/triangles.png)
 
 | Blend method | Morph method |
-|: ---: |: ---: |
-|![] (doc/blend-effect-0.25.gif) |![] (doc/morph-effect-0.25.gif) |
+|:---:|:---:|
+|![](doc/blend-effect-0.25.gif)|![](doc/morph-effect-0.25.gif)|
 
 Stress test & example:
 
--[Dynamic Panorama] (dyna_texture.html)
--[Dynamic Panorama Sphere] (dyna_sphere.html)
--Example: [Transition of a triangle] (dyna_triangle.html)
+-[Dynamic Panorama](dyna_texture.html)
+-[Dynamic Panorama Sphere](dyna_sphere.html)
+-Example: [Transition of a triangle](dyna_triangle.html)
 
 ## Main interface // Main window
-
-! [] (doc / chrome_2017-05-05_16-32-17.png)
 
 View Demo：
 
@@ -46,18 +44,18 @@ View Demo：
 
 Inspiration:
 
--[Face Morphing using OpenCV (C ++ / Python)-YouTube] (https://www.youtube.com/watch?v=pqpS6BN0_7k)
--[Face Morph Using OpenCV — C ++ / Python | Learn OpenCV] (http://www.learnopencv.com/face-morph-using-opencv-cpp-python/)
+-[Face Morphing using OpenCV (C ++ / Python)-YouTube](https://www.youtube.com/watch?v=pqpS6BN0_7k)
+-[Face Morph Using OpenCV — C ++ / Python | Learn OpenCV](http://www.learnopencv.com/face-morph-using-opencv-cpp-python/)
 
 Notes:
 
--[three.js / examples] (https://threejs.org/examples/?q=texture#webgl_raycast_texture)
--[three.js / webgl_raycast_texture.html at master · mrdoob / three.js] (https://github.com/mrdoob/three.js/blob/master/examples/webgl_raycast_texture.html)
--[pnitsch / GSVPano.js: Google Street View Panorama Util] (https://github.com/pnitsch/GSVPano.js)
--[Canvas Voronoi-bl.ocks.org] (https://bl.ocks.org/mbostock/6675193)
--[CodeSeven / toastr: Simple javascript toast notifications] (https://github.com/CodeSeven/toastr)
--[d3 / API.md at master · d3 / d3] (https://github.com/d3/d3/blob/master/API.md#voronoi-diagrams-d3-voronoi)
--[d3-voronoi / Diagram.js at master · d3 / d3-voronoi] (https://github.com/d3/d3-voronoi/blob/master/src/Diagram.js#L82).
--[eligrey / FileSaver.js: An HTML5 saveAs () FileSaver implementation] (https://github.com/eligrey/FileSaver.js)
+-[three.js / examples](https://threejs.org/examples/?q=texture#webgl_raycast_texture)
+-[three.js / webgl_raycast_texture.html at master · mrdoob / three.js](https://github.com/mrdoob/three.js/blob/master/examples/webgl_raycast_texture.html)
+-[pnitsch / GSVPano.js: Google Street View Panorama Util](https://github.com/pnitsch/GSVPano.js)
+-[Canvas Voronoi-bl.ocks.org](https://bl.ocks.org/mbostock/6675193)
+-[CodeSeven / toastr: Simple javascript toast notifications](https://github.com/CodeSeven/toastr)
+-[d3 / API.md at master · d3 / d3](https://github.com/d3/d3/blob/master/API.md#voronoi-diagrams-d3-voronoi)
+-[d3-voronoi / Diagram.js at master · d3 / d3-voronoi](https://github.com/d3/d3-voronoi/blob/master/src/Diagram.js#L82).
+-[eligrey / FileSaver.js: An HTML5 saveAs () FileSaver implementation](https://github.com/eligrey/FileSaver.js)
 
 Code reading suggestions: Tutorial.txt
