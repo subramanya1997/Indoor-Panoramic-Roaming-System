@@ -17,10 +17,7 @@ Stress test & example:
 
 ## Main interface // Main window
 
-![](doc/chrome_2017-05-05_16-32-17.png)
-
 View Demo：
-
 -   In the [Editor] column, click [Open Control], then [Load Sample Pairs]
 -	Go to the [Sphere] column, click [Open Control], and then [Transition], the effect is not good (see Blend method above);
 -	Go to the [Editor] column, click [Open Control], and then [Triangle];
