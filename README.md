@@ -11,13 +11,13 @@ The dynamic texture is formed by triangulation, which makes the scene transition
 
 Stress test & example:
 
--[Dynamic Panorama] (dyna_texture.html)
--[Dynamic Panorama Sphere] (dyna_sphere.html)
--Example: [Transition of a triangle] (dyna_triangle.html)
+-[Dynamic Panorama](dyna_texture.html)
+-[Dynamic Panorama Sphere](dyna_sphere.html)
+-Example: [Transition of a triangle](dyna_triangle.html)
 
 ## Main interface // Main window
 
-! [] (doc / chrome_2017-05-05_16-32-17.png)
+![](doc/chrome_2017-05-05_16-32-17.png)
 
 View Demo：
 
