@@ -1,9 +1,9 @@
- # ![texture-morpher] (index.html)
+ # ![texture-morpher](index.html)
 a tool to make morphable texture
 
 The dynamic texture is formed by triangulation, which makes the scene transition of the panoramic roaming system more natural.
 
-![] (doc/ triangles.png)
+![](doc/ triangles.png)
 
 | Blend method | Morph method |
 |: ---: |: ---: |
