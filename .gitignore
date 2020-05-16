@@ -1,0 +1,7 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/*
+*.7z
+*.zip
+*.rar
+/tmp/
+images/*.jpg

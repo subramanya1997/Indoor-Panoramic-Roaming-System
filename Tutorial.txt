@@ -1,0 +1,6 @@
+Code reading reference order:
+
+-Dynamic triangle dyna_triangle.html
+-Dynamic panorama dyna_sphere.html
+-Dynamic panorama dyna_texture.html
+-Editor of the same name editor.html

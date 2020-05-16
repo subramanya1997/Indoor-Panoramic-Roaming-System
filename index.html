@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Research on Transition of Panoramic Roaming Scene</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1">
+    <style>
+        * {
+            font-family: Monaco, Menlo, Consolas, "Courier New", Monospace, "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", STXihei, Heiti, sans-serif, FontAwesome;
+            font-size: 150;
+        }
+        li {
+            margin-bottom: 2em;
+            list-style-type: square;
+        }
+        ul, #qrcode3 {
+            margin-left: 2em;
+        }
+    </style>
+</head>
+<body>
+<h1>Research on Transition of Panoramic Roaming Scene</h1>
+<table>
+<thead>
+<tr class="header">
+<th align="center">Blend method</th>
+<th align="center">Morph method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><img src="doc/blend-effect-0.25.gif" /></td>
+<td align="center"><img src="doc/morph-effect-0.25.gif" /></td>
+</tr>
+</tbody>
+</table>
+<ul>
+    <li>Morph：<a target="_blank" href="dyna_sphere.html" >Dynamic panoramic ball</a> solution<br /><div id="qrcode1"></div></li>
+    <li>Morph：<a target="_blank" href="dyna_texture.html">Dynamic panorama</a> solution<br /><div id="qrcode2"></div></li>
+    <li> <a target="_blank" href="editor.html"> Dot editor of the same name </a> (please open it on your computer) </ li>
+</ul>
+
+<hr style="color:violet;margin-top: 10em"/>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/qrcode.min.js"></script>
+<script>
+    var url = window.location.toString();
+    var index = url.lastIndexOf('/');
+    var url1 = url.substring(0,index)+'/dyna_sphere.html';
+    var url2 = url.substring(0,index)+'/dyna_texture.html';
+    var url3 = url.substring(0,index)+'/dyna_triangle.html';
+    new QRCode(document.getElementById("qrcode1"), url1);
+    new QRCode(document.getElementById("qrcode2"), url2);
+    new QRCode(document.getElementById("qrcode3"), url3);
+    new QRCode(document.getElementById("qrcode4"), url );
+</script>
+</body>

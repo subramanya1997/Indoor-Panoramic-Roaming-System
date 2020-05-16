@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic panorama</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/dat-gui-light-theme.css" type="text/css" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1">
+    <style>
+        body {
+            margin: 0px;
+            overflow: hidden;
+            z-index: -1000;
+        }
+        #progress {
+            position: absolute;
+            bottom: 0;
+            right: 10%;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<input id="progress" type="range" name="progress" min="0" max="1" step="0.00001" value="0" />
+
+<script src="js/jquery.min.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/three.js"></script>
+<script src="js/d3.v4.min.js"></script>
+<script src="js/CanvasRenderer.js"></script>
+<script src="js/Stats.js"></script>
+<script src="js/DeviceOrientationControls.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/dat.gui.min.js"></script>
+<script src="js/tween.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/DualTriMesh.js"></script>
+
+<script>
+    "use strict";
+
+    function newTriangle(a,b,c) { // a,b,c
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(a.clone());
+        geometry.vertices.push(b.clone());
+        geometry.vertices.push(c.clone());
+        geometry.faces.push( new THREE.Face3(0,1,2) );
+        geometry.updatePosition = function (a,b,c) {
+            geometry.vertices[0].copy(a);
+            geometry.vertices[1].copy(b);
+            geometry.vertices[2].copy(c);
+            geometry.verticesNeedUpdate = true;
+        };
+        return geometry;
+    }
+
+    // This renderer is used to get [texture frame]
+    var _renderer = new THREE.WebGLRenderer({ antialias: true });
+    _renderer.setSize(4096, 2048);
+
+    // The orthophoto camera is used for sampling to get [texture frame]
+    var orthCamera = new THREE.OrthographicCamera(-2048,2048,1024,-1024,1,5000); // left, right, top, bottom, near, far
+    orthCamera.position.set(0,0,3000);
+    orthCamera.lookAt(new THREE.Vector3(0,0,0));
+    var group = new THREE.Group();
+
+    var materialA = new THREE.MeshBasicMaterial( { map: new THREE.TextureLoader().load( 'texture1.jpg' ), side: THREE.DoubleSide, transparent: true } );
+    var materialB = new THREE.MeshBasicMaterial( { map: new THREE.TextureLoader().load( 'texture2.jpg' ), side: THREE.DoubleSide, transparent: false } );
+
+    // A group of triangles, the displacement and deformation of the triangle are controlled by three points renference r1, r2, r3 with the same name
+    function newPairTriangle(r1,r2,r3) {
+
+        var group = new THREE.Group();
+        // save the renference
+        group.pairs = [ r1,r2,r3 ];
+
+        // p {1 ~ 3} is the initial position, p {4 ~ 6} is the target position
+        var p1 = new THREE.Vector3(r1.x1,r1.y1,0),
+            p2 = new THREE.Vector3(r2.x1,r2.y1,0),
+            p3 = new THREE.Vector3(r3.x1,r3.y1,0),
+            p4 = new THREE.Vector3(r1.x2,r1.y2,0),
+            p5 = new THREE.Vector3(r2.x2,r2.y2,0),
+            p6 = new THREE.Vector3(r3.x2,r3.y2,0);
+       // Initialize the three triangles tri1, tri2, tri3 with the initial position
+        var tri1 = newTriangle( p1.clone().setZ(200), p2.clone().setZ(200), p3.clone().setZ(200) ),
+            tri2 = newTriangle( p1.clone().setZ(100), p2.clone().setZ(100), p3.clone().setZ(100) ),
+            tri3 = newTriangle( p1.clone().setZ(300), p2.clone().setZ(300), p3.clone().setZ(300) );
+        // tri1 applies the current panoramic texture, tri2 applies the next stop panoramic texture, and tri3 applies the white wireframe
+        var mesh1 = new THREE.Mesh(tri1, materialA),
+            mesh2 = new THREE.Mesh(tri2, materialB),
+            mesh3 = new THREE.Mesh(tri3, config.whiteFrameMaterial);
+        group.add(mesh1).add(mesh2).add(mesh3);
+        if (!config.debug) {
+            mesh3.visible = false;
+        }
+
+        mesh1.geometry.faceVertexUvs[0] = [];   // set up an array
+        mesh1.geometry.faceVertexUvs[0].push([  // and push some elements
+            Util.xy2uv(p1.x,p1.y),
+            Util.xy2uv(p2.x,p2.y),
+            Util.xy2uv(p3.x,p3.y)
+        ]);
+        mesh1.uvsNeedUpdate = true;
+
+        mesh2.geometry.faceVertexUvs[0] = [];
+        mesh2.geometry.faceVertexUvs[0].push([
+            Util.xy2uv(p4.x,p4.y),
+            Util.xy2uv(p5.x,p5.y),
+            Util.xy2uv(p6.x,p6.y)
+        ]);
+        mesh2.uvsNeedUpdate = true;
+
+        group.tri1 = tri1; group.mesh1 = mesh1;
+        group.tri2 = tri2; group.mesh2 = mesh2;
+        group.tri3 = tri3; group.mesh3 = mesh3;
+        // Update location
+        group.updatePosition = function(alpha) {
+            var r1 = group.pairs[0],
+                r2 = group.pairs[1],
+                r3 = group.pairs[2];
+            var p1 = new THREE.Vector3(r1.x1,r1.y1,0), p4 = new THREE.Vector3(r1.x2,r1.y2,0),
+                p2 = new THREE.Vector3(r2.x1,r2.y1,0), p5 = new THREE.Vector3(r2.x2,r2.y2,0),
+                p3 = new THREE.Vector3(r3.x1,r3.y1,0), p6 = new THREE.Vector3(r3.x2,r3.y2,0);
+            // Linear interpolation
+            p1.lerp(p4, alpha);
+            p2.lerp(p5, alpha);
+            p3.lerp(p6, alpha);
+            // Update triangles separately
+            group.tri1.updatePosition(p1.clone().setZ(200),p2.clone().setZ(200),p3.clone().setZ(200));
+            group.tri2.updatePosition(p1.clone().setZ(100),p2.clone().setZ(100),p3.clone().setZ(100));
+            group.tri3.updatePosition(p1.clone().setZ(300),p2.clone().setZ(300),p3.clone().setZ(300));
+            group.mesh3.visible = config.debug;
+        };
+        group.isPairTriangle = true;
+        return group;
+    }
+
+    var container, camera, scene, renderer,
+        texture,
+        material,
+        geometry,
+        mesh,
+        controlsDeviceOri, controlsOrbit,
+        stats;
+
+    var Config = function() {
+
+        var _this = this;
+        this.debug = false;
+
+        this.autorot = 0;
+
+        this.whiteFrameMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide, transparent: true });
+
+        // Pressure test
+        this.benchmark = false;
+
+        this.lastProgress = -1.0;
+        this.progress = 0.0;
+        this.inProgress = false;
+        this.applyProgress = function() {
+            $(".close-button").click();
+            $("#progress")[0].value = _this.progress = 0.0;
+            _this.inProgress = true;
+            var t1 = new TWEEN.Tween(_this)
+                .delay(100)
+                .to({ progress: 1.0 }, 5000)
+                .onComplete(function() {
+                    _this.inProgress = false;
+                });
+            t1.start();
+        };
+
+        // Deformation
+        this.morph = function(t) {
+            var t = t || _this.progress;
+            if (t === _this.lastProgress) { return; }
+            _this.lastProgress = t;
+            // Update triangle group (there are many triangle groups, each triangle group consists of three triangles, the current texture, the next stop texture, and the wireframe texture are applied respectively)
+            group.children.forEach(function(tri){
+                if (tri.isPairTriangle === true) {
+                    tri.updatePosition(t);
+                }
+            });
+            // render a canvas, render [texture frame]
+            materialA.opacity = 1-t;
+            _renderer.render(scene, orthCamera);
+            // After rendering, _renderer.domElement is updated, now remind texture
+            texture.needsUpdate = true;
+        };
+
+        this.fov = 60;
+        this.lon = 180;
+        this.lat = 0;
+        this.freeze = false;
+        this.toggleCamera = function() {
+            controlsOrbit.enabled = !controlsOrbit.enabled;
+            if (controlsOrbit.enabled) {
+                camera.position.copy(camera.position0);
+                controlsOrbit.target.set(0,0,0);
+            } else {
+                camera.position0.copy(camera.position);
+                camera.position.set(0,0,0);
+            }
+        };
+
+        this.loadDefaultPairs = function() {
+            $.get('pairs.json', function(data) {
+                config.loadPairsTxt(data);
+                config.applyTriangulation();
+            }, 'text');
+        };
+        this.pairs = [];
+        // Said this
+        this.loadPairsTxt = function(text) {
+            _this.pairs = [];
+            var pairs = JSON.parse(text);
+            pairs.forEach(function(pair){
+                var p = new Pair({
+                    loading: true,
+                    x1: pair.x1,
+                    y1: pair.y1,
+                    x2: pair.x2,
+                    y2: pair.y2
+                });
+                if (p.valid === true) {
+                    _this.pairs.push(p);
+                }
+            });
+        };
+        // Said this
+        this.applyTriangulation = function(){
+            var sites = [];
+            var refs = {};
+            var xmin = 100000000, xmax = 0, ymin = 10000000000, ymax = 0;
+            _this.pairs.forEach(function(pair){
+                if (pair.valid) {
+                    var p = [pair.x1, pair.y1];
+                    refs[Util.pos2name(p[0],p[1])] = pair;
+                    sites.push(p);
+                    if (xmin > p[0]) { xmin = p[0]; }
+                    if (xmax < p[0]) { xmax = p[0]; }
+                    if (ymin > p[1]) { ymin = p[1]; }
+                    if (ymax < p[1]) { ymax = p[1]; }
+                }
+            });
+            var voronoi = d3.voronoi().extent([[xmin-10, ymin-10], [xmax+10, ymax+10]]);
+            var diagram = voronoi(sites);
+            var triangles = diagram.triangles();
+            var index = 0;
+            group.childeren = [];
+            triangles.forEach(function(tri){
+                var p1 = tri[0];
+                var p2 = tri[1];
+                var p3 = tri[2];
+                var p1n = Util.pos2name(p1[0],p1[1]);
+                var p2n = Util.pos2name(p2[0],p2[1]);
+                var p3n = Util.pos2name(p3[0],p3[1]);
+                var ref1 = refs[p1n];
+                var ref2 = refs[p2n];
+                var ref3 = refs[p3n];
+                if ( ref1 !== undefined && ref2 !== undefined && ref3 !== undefined ) {
+                    // editor
+                    var mesh = newPairTriangle(ref1,ref2,ref3);
+                    group.add(mesh);
+                }
+            });
+        };
+    };
+    var config = new Config();
+
+    var isDesktop = !navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|BB10|mobi|tablet|opera mini|nexus 7)/i);
+    var gui = new dat.GUI(); gui.closed = true;
+    window.addEventListener('load', function() {
+        var animate = function(time){
+            window.requestAnimationFrame( animate );
+            TWEEN.update();
+            if (config.inProgress) {
+                $("#progress")[0].value = config.progress;
+            }
+            if (config.benchmark) {
+                config.progress = time%100/100;
+            }
+            config.morph();
+            if (controlsOrbit.enabled) {
+                controlsOrbit.update();
+            } else {
+                if (controlsDeviceOri.enabled) {
+                    if (!config.freeze) {
+                        controlsDeviceOri.update();
+                    }
+                } else {
+                    camera.lon += config.autorot/5;
+                    if (camera.lon > 360) { camera.lon -= 360; }
+                    if (camera.lon <   0) { camera.lon += 360; }
+                    camera.lat = Math.max( - 85, Math.min( 85, camera.lat ) );
+                    var phi = THREE.Math.degToRad( 90 - camera.lat );
+                    var theta = THREE.Math.degToRad( camera.lon );
+                    camera.target.x = 500 * Math.sin( phi ) * Math.cos( theta );
+                    camera.target.y = 500 * Math.cos( phi );
+                    camera.target.z = 500 * Math.sin( phi ) * Math.sin( theta );
+                    camera.lookAt( camera.target.add(camera.position) );
+                }
+            }
+            renderer.render(scene, camera);
+            stats.update();
+        };
+
+        stats = new Stats();
+        document.body.appendChild(stats.domElement);
+
+        camera = new THREE.PerspectiveCamera(config.fov, window.innerWidth / window.innerHeight, 1, 10000000);
+        camera.isUserInteracting = false;
+        camera.lon = 169.89999999999998;
+        camera.lat = -3.3000000000000003;
+        camera.onPointerDownPointerX = 0;
+        camera.onPointerDownPointerY = 0;
+        camera.onPointerDownLon = 0;
+        camera.onPointerDownLat = 0;
+        camera.target = new THREE.Vector3( 0, 0, 0 );
+        camera.position0 = new THREE.Vector3( 1000, 0, 0 );
+
+        scene = new THREE.Scene();
+        scene.add(new THREE.AmbientLight(0xffffff));
+        group.position.set(0,0,2500);
+        scene.add(group);
+        scene.add(new THREE.AxisHelper(1000));
+
+        var geometry = new THREE.PlaneGeometry( 4096, 2048, 32, 16 );
+        var plane1 = new THREE.Mesh( geometry.clone(), materialA ); plane1.position.set(0,0,2000);
+        var plane2 = new THREE.Mesh( geometry.clone(), materialB ); plane2.position.set(0,0,1000);
+        scene.add(plane1).add(plane2);
+        config.plane1 = plane1;
+        config.plane2 = plane2;
+
+        // Note that this texture comes from the domElement of _renderer
+        texture = new THREE.Texture( _renderer.domElement, THREE.UVMapping, THREE.RepeatWrapping, THREE.RepeatWrapping );
+        texture.needsUpdate = true;
+        geometry = new THREE.SphereGeometry( 500, 64, 32 ); geometry.scale( - 1, 1, 1 );
+        // This texture is used on the panoramic ball
+        material = new THREE.MeshBasicMaterial( { map: texture, side: THREE.DoubleSide } ),
+        mesh = new THREE.Mesh( geometry, material );
+        scene.add( mesh );
+
+        container = document.getElementById( 'container' );
+        if( Detector.webgl ){
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+              // , alpha: true
+            });
+        } else {
+            renderer = new THREE.CanvasRenderer();
+        }
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.style.position = 'absolute';
+        renderer.domElement.style.top = 0;
+        container.appendChild(renderer.domElement);
+
+        controlsDeviceOri = new THREE.DeviceOrientationControls( camera );
+        controlsOrbit = new THREE.OrbitControls( camera, renderer.domElement );
+        controlsOrbit.enabled = false;
+        if (isDesktop) {
+            controlsDeviceOri.enabled = false;
+        }
+
+        window.addEventListener('resize', function() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+        }, false);
+        container.addEventListener( 'mousedown', function(event) {
+            if (controlsOrbit.enabled) { return; }
+            camera.isUserInteracting = true;
+            camera.onPointerDownPointerX = event.clientX;
+            camera.onPointerDownPointerY = event.clientY;
+            camera.onPointerDownLon = camera.lon;
+            camera.onPointerDownLat = camera.lat;
+        }, false );
+        container.addEventListener( 'mousemove', function(event) {
+            if (controlsOrbit.enabled) { return; }
+            if ( camera.isUserInteracting === true ) {
+                camera.lon = ( camera.onPointerDownPointerX - event.clientX ) * 0.1 + camera.onPointerDownLon;
+                camera.lat = ( event.clientY - camera.onPointerDownPointerY ) * 0.1 + camera.onPointerDownLat;
+            }
+        }, false );
+        container.addEventListener( 'mouseup', function(event) {
+            if (controlsOrbit.enabled) { return; }
+            camera.isUserInteracting = false;
+        }, false );
+        container.addEventListener( 'wheel', function(event) {
+            var fov = camera.fov + event.deltaY * 0.05;
+            camera.fov = THREE.Math.clamp(Math.round(fov), 10, 100);
+            config.fov = camera.fov; gui.updateDisplay();
+            camera.updateProjectionMatrix();
+        }, false );
+
+        gui.add(config, 'applyProgress').name("Transition");
+        gui.add(config, 'benchmark').name("Pressure Test");
+        gui.add(config, 'toggleCamera').name("Switch Camera");
+        gui.add(config, 'autorot').min(-5).max(+5).step(1).listen().name("Automatic Browsing");
+        gui.add(config, 'fov').min(10).max(150).step(1).listen().name("Angle of View").onChange(function(value){
+            if (config.fov !== camera.fov) {
+                camera.fov = value;
+                camera.updateProjectionMatrix();
+            }
+        });
+        gui.add(config, 'debug').name("Display grid").onChange(function(){
+            config.lastProgress = -1.0;
+        });
+        if (isDesktop) {
+            gui.add(camera, 'lon').min(  0).max(360).step(1).listen().name("lon");
+            gui.add(camera, 'lat').min(-85).max( 85).step(1).listen().name("lat");
+        } else {
+            gui.add(config, 'freeze').name("Lock Gravity Sensor");
+        }
+
+        animate();
+        config.loadDefaultPairs();
+
+    }, false);
+
+    $("#progress").on("input", function(){
+        config.progress = this.value;
+    });
+
+</script>
+
+</body>
+</html>
