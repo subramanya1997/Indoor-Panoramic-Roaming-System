@@ -36,9 +36,9 @@ View Demo：
 
 -Load a new panorama through [Load Picture] under [Open Control];
 
-## Dynamic panorama // Sphere
+## Dynamic panorama
 
-## Dynamic panorama ball // SPHERE
+## Dynamic panorama ball 
 
 ---
 
