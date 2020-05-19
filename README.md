@@ -1,5 +1,5 @@
- # [texture morpher using three.js](index.html)
-a tool to make morphable texture
+ # [Indoor Panoramic Roaming System using three.js](index.html)
+The smooth transition among panorama views. By providing control point correspondences, we can guide the view morphing from one panorama to another in a natural way. Compared with typical solutions like blending, stretching, and parallax-effect methods, this solution provides a natural transition effect similar to what people see when walking in 3D environment from one panorama viewing site to another.
 
 The dynamic texture is formed by triangulation, which makes the scene transition of the panoramic roaming system more natural.
 
