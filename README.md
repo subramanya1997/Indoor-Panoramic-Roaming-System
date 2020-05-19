@@ -21,14 +21,6 @@ View Demo：
 -	Go to the [Sphere] column, click [Open Control], and then [Transition], the effect is not good (see Blend method above);
 -	Go to the [Sphere] column, click [Open Control], and finally [Transition], the effect is much better (see Morph method above).
 
-## EDITOR USE // Usage of Editor
-
--Right-click on the texture to add points with the same name;
--The newly added point with the same name is activated, and you can move the position through [directional key] (blue point) or [Control + direction key] (green point);
--On the right side, the Pair List can also be used to fine-tune the position;
--You can delete a pair of points with the same name through the [X] button on the Pair List;
--Save the position by the number keys [3] and [4], and then load the position by the number keys [1] and [2], which makes it easier to switch between the two pictures before and after;
-
 ---
 
 Inspiration:
