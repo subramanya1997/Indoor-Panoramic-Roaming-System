@@ -29,14 +29,6 @@ View Demo：
 -You can delete a pair of points with the same name through the [X] button on the Pair List;
 -Save the position by the number keys [3] and [4], and then load the position by the number keys [1] and [2], which makes it easier to switch between the two pictures before and after;
 
-## texture 1 & texture 2 // T1 & T2
-
--Load a new panorama through [Load Picture] under [Open Control];
-
-## Dynamic panorama
-
-## Dynamic panorama ball 
-
 ---
 
 Inspiration:
